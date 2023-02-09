@@ -10,22 +10,22 @@ import pandas as pd
 import tkinter as tk
 from tkinter import ttk
 import time
+import sqlite3 as sql
 
-#verificando se o arquivo existe
-try:
-    df = pd.read_csv("clientes.csv")
-except:
-    df = pd.DataFrame(columns=["id","nome","telefone","endereco"])
-    df.to_csv("clientes.csv", index=False)
-
-try:
-    df = pd.read_csv("ordens.csv")
-except:
-    df = pd.DataFrame(columns=["id","cliente","data","descricao"])
-    df.to_csv("ordens.csv", index=False)
+#criando o banco de dados clientes.db
+conn = sql.connect("data.db")
+#criando o cursor
+cursor = conn.cursor()
+#criando a tabela clientes
+cursor.execute("CREATE TABLE IF NOT EXISTS clientes (id INTEGER PRIMARY KEY, nome TEXT, telefone TEXT, endereco TEXT)")
+#criando a tabela ordens de serviço
+cursor.execute("CREATE TABLE IF NOT EXISTS ordens (id INTEGER PRIMARY KEY, cliente TEXT, data TEXT, descricao TEXT, valor REAL)")
+#salvando as alterações
+conn.commit()
+#fechando a conexão
+conn.close()
 
 #funçoes
-
 
 #cadastrar cliente
 def cadastrar_cliente():
@@ -58,29 +58,16 @@ def cadastrar_cliente():
 
     #função para cadastrar cliente no banco de dados
     def cadastrar_cliente_bd(nome, telefone, endereco):
-        #lendo o arquivo
-        df = pd.read_csv("clientes.csv")
-        #pegando o maior id
-        last_id = df["id"].max()
-        #criando o id
-        id = last_id + 1
-        #criando o dicionario
-        dicionario = {"id":id, "nome":nome, "telefone":telefone, "endereco":endereco}
-        #checando se o nome do cliente já existe
-        if nome in df["nome"].values:
-            #mostrando a mensagem de erro
-            label_confirmacao["text"] = "Cliente já cadastrado!"
-            #atualizando a janela
-            janela_cadastrar_cliente.update()
-            #esperando 1 segundos
-            time.sleep(1)
-            #fechando a janela
-            janela_cadastrar_cliente.destroy()
-            return
-        #adicionando o dicionario no dataframe usando o concat
-        df = pd.concat([df, pd.DataFrame([dicionario])], ignore_index=True)
-        #salvando o dataframe no arquivo
-        df.to_csv("clientes.csv", index=False)
+        #conectando ao banco de dados
+        conn = sql.connect("data.db")
+        #criando o cursor
+        cursor = conn.cursor()
+        #inserindo os dados na tabela clientes e gerando o id automaticamente
+        cursor.execute("INSERT INTO clientes (nome, telefone, endereco) VALUES (?, ?, ?)", (nome, telefone, endereco))
+        #salvando as alterações
+        conn.commit()
+        #fechando a conexão
+        conn.close()
         #mostrando a mensagem de confirmação
         label_confirmacao["text"] = "Cliente cadastrado com sucesso!"
         #atualizando a janela
@@ -111,17 +98,21 @@ def editar_cliente():
     #background cor branca
     janela_editar_cliente.configure(background="#ffffff")
 
-    #carregando o arquivo de clientes
-    df = pd.read_csv("clientes.csv")
-    #criando a lista de clientes
+    #carregando a lista de clientes
     lista_clientes = []
-    lista_clientesid = []
-    #percorrendo o dataframe
-    for i in range(len(df)):
-        #adicionando o nome do cliente na lista e armazenando o id
-        lista_clientes.append(df.loc[i, "nome"])
-        lista_clientesid.append(df.loc[i, "id"])
-
+    #conectando ao banco de dados
+    conn = sql.connect("data.db")
+    #criando o cursor
+    cursor = conn.cursor()
+    #buscando os dados na tabela clientes
+    cursor.execute("SELECT nome FROM clientes")
+    #pegando os dados
+    dados = cursor.fetchall()
+    #fechando a conexão
+    conn.close()
+    #adicionando os dados na lista
+    for dado in dados:
+        lista_clientes.append(dado[0])
 
     #disponibilizando a lista de clientes no combobox organizando por ordem alfabética
     combobox_clientes = ttk.Combobox(janela_editar_cliente, values=sorted(lista_clientes))
@@ -165,18 +156,21 @@ def editar_cliente():
     def selecionar_cliente(event):
         #pegando o nome do cliente selecionado
         nome_cliente = combobox_clientes.get()
-        #lendo o arquivo
-        df = pd.read_csv("clientes.csv")
-        #filtrando o dataframe pelo nome do cliente
-        df = df[df["nome"] == nome_cliente]
-        #pegando o nome do cliente
-        nome_cliente_atual = df.loc[df.index[0], "nome"]
-        #pegando o telefone do cliente
-        telefone_cliente_atual = df.loc[df.index[0], "telefone"]
-        #pegando o endereço do cliente
-        endereco_cliente_atual = df.loc[df.index[0], "endereco"]
-        #pegando o id do cliente
-        id_cliente_atual = df.loc[df.index[0], "id"]
+        #conectando ao banco de dados
+        conn = sql.connect("data.db")
+        #criando o cursor
+        cursor = conn.cursor()
+        #buscando os dados na tabela clientes
+        cursor.execute("SELECT * FROM clientes WHERE nome = ?", (nome_cliente,))
+        #pegando os dados
+        dados = cursor.fetchall()
+        #fechando a conexão
+        conn.close()
+        #pegando os dados do cliente
+        nome_cliente_atual = dados[0][1]
+        telefone_cliente_atual = dados[0][2]
+        endereco_cliente_atual = dados[0][3]
+        id_cliente_atual = dados[0][0]
         #limpando os campos de texto
         campo_nome.delete(0, tk.END)
         campo_telefone.delete(0, tk.END)
@@ -190,20 +184,23 @@ def editar_cliente():
         campo_endereco.insert(0, endereco_cliente_atual)
         #mostrando o id do cliente no campo de texto
         campo_id["text"] = id_cliente_atual
+        return id_cliente_atual
     
     #quando o usuário selecionar um cliente, chama a função selecionar_cliente
     combobox_clientes.bind("<<ComboboxSelected>>", selecionar_cliente)
 
     #função para editar o cliente no banco de dados
-    def editar_cliente_bd(nome_modificado, telefone_modificado, endereco_modificado, id_modificado):
-        #lendo o arquivo
-        df = pd.read_csv("clientes.csv")
-        #procurando o cliente pelo id
-        df.loc[df["id"] == int(id_modificado), "nome"] = nome_modificado
-        df.loc[df["id"] == int(id_modificado), "telefone"] = telefone_modificado
-        df.loc[df["id"] == int(id_modificado), "endereco"] = endereco_modificado
-        #salvando o arquivo
-        df.to_csv("clientes.csv", index=False)
+    def editar_cliente_bd(nome_modificado, telefone_modificado, endereco_modificado, id_cliente_atual):
+        #conectando ao banco de dados
+        conn = sql.connect("data.db")
+        #criando o cursor
+        cursor = conn.cursor()
+        #atualizando os dados do cliente
+        cursor.execute("UPDATE clientes SET nome = ?, telefone = ?, endereco = ? WHERE id = ?", (nome_modificado, telefone_modificado, endereco_modificado, id_cliente_atual))
+        #salvando as alterações
+        conn.commit()
+        #fechando a conexão
+        conn.close()
         #mostrando a mensagem de sucesso
         label_info["text"] = "Cliente editado com sucesso!"
         #atualizando a tela
