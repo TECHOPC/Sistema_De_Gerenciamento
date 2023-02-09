@@ -152,7 +152,7 @@ def editar_cliente():
     botao_editar = tk.Button(janela_editar_cliente, text="Salvar Alterações", command=lambda: editar_cliente_bd(campo_nome.get(), campo_telefone.get(), campo_endereco.get(), campo_id["text"]))
     botao_editar.place(x=100, y=160)
 
-        #função para selecionar o cliente
+    #função para selecionar o cliente
     def selecionar_cliente(event):
         #pegando o nome do cliente selecionado
         nome_cliente = combobox_clientes.get()
@@ -213,10 +213,177 @@ def editar_cliente():
     #mostrando a janela
     janela_editar_cliente.mainloop()
 
+#listar clientes
+def listar_clientes():
+    #criando a janela
+    janela_listar_clientes = tk.Tk()
+    janela_listar_clientes.title("Listar Clientes")
+    janela_listar_clientes.geometry("525x300")
+    #background cor branca
+    janela_listar_clientes.configure(background="#ffffff")
 
 
-        
+    #criando uma tabela para mostrar os clientes, com 4 colunas
+    tabela_clientes = ttk.Treeview(janela_listar_clientes, columns=("id", "nome", "telefone", "endereco"))
+    #definindo o tamanho das colunas
+    tabela_clientes.column("#0", width=0)
+    tabela_clientes.column("id", width=50)
+    tabela_clientes.column("nome", width=150)
+    tabela_clientes.column("telefone", width=150)
+    tabela_clientes.column("endereco", width=150)
+    #definindo o nome das colunas
+    tabela_clientes.heading("#0", text="")
+    tabela_clientes.heading("id", text="ID")
+    tabela_clientes.heading("nome", text="Nome")
+    tabela_clientes.heading("telefone", text="Telefone")
+    tabela_clientes.heading("endereco", text="Endereço")
+    #posicionando a tabela
+    tabela_clientes.place(x=10, y=40)
+
+    #função para mostrar os clientes na tabela
+    def mostrar_clientes():
+        #conectando ao banco de dados
+        conn = sql.connect("data.db")
+        #criando o cursor
+        cursor = conn.cursor()
+        #buscando os dados na tabela clientes
+        cursor.execute("SELECT * FROM clientes")
+        #pegando os dados
+        dados = cursor.fetchall()
+        #fechando a conexão
+        conn.close()
+        #limpando a tabela
+        tabela_clientes.delete(*tabela_clientes.get_children())
+        #mostrando os clientes na tabela
+        for i in dados:
+            tabela_clientes.insert("", tk.END, values=i)
+
+    #mostrando os clientes na tabela
+    mostrar_clientes()
+           
+#excluindo clientes
+def excluir_cliente():
+    #editar cliente
+    janela_editar_cliente = tk.Tk()
+    janela_editar_cliente.title("GCOS - Editar Cliente")
+    janela_editar_cliente.geometry("300x300")
+    #background cor branca
+    janela_editar_cliente.configure(background="#ffffff")
+
+    #carregando a lista de clientes
+    lista_clientes = []
+    #conectando ao banco de dados
+    conn = sql.connect("data.db")
+    #criando o cursor
+    cursor = conn.cursor()
+    #buscando os dados na tabela clientes
+    cursor.execute("SELECT nome FROM clientes")
+    #pegando os dados
+    dados = cursor.fetchall()
+    #fechando a conexão
+    conn.close()
+    #adicionando os dados na lista
+    for dado in dados:
+        lista_clientes.append(dado[0])
+
+    #disponibilizando a lista de clientes no combobox organizando por ordem alfabética
+    combobox_clientes = ttk.Combobox(janela_editar_cliente, values=sorted(lista_clientes))
+    combobox_clientes.place(x=10, y=10)
+
+    #criando os labels
+    label_nome = tk.Label(janela_editar_cliente, text="Nome", bg="#ffffff")
+    label_nome.place(x=10, y=40)
+
+    label_telefone = tk.Label(janela_editar_cliente, text="Telefone", bg="#ffffff")
+    label_telefone.place(x=10, y=70)
+
+    label_endereco = tk.Label(janela_editar_cliente, text="Endereço", bg="#ffffff")
+    label_endereco.place(x=10, y=100)
+
+    label_id = tk.Label(janela_editar_cliente, text="ID", bg="#ffffff")
+    label_id.place(x=10, y=130)
+
+    label_info = tk.Label(janela_editar_cliente, text="", bg="#ffffff")
+    label_info.place(x=10, y=180)
+
+
+    #criando os campos de texto
+    campo_nome = tk.Entry(janela_editar_cliente)
+    campo_nome.place(x=100, y=40)
+
+    campo_telefone = tk.Entry(janela_editar_cliente)
+    campo_telefone.place(x=100, y=70)
+
+    campo_endereco = tk.Entry(janela_editar_cliente)
+    campo_endereco.place(x=100, y=100)
+
+    campo_id = tk.Label(janela_editar_cliente)
+    campo_id.place(x=100, y=130)
+
+    #criando o botão de excluir
+    botao_editar = tk.Button(janela_editar_cliente, text="excluir", command=lambda: excluir_cliente_bd(campo_nome.get(), campo_telefone.get(), campo_endereco.get(), campo_id["text"]))
+    botao_editar.place(x=100, y=160)
+
+    #função para selecionar o cliente
+    def selecionar_cliente(event):
+        #pegando o nome do cliente selecionado
+        nome_cliente = combobox_clientes.get()
+        #conectando ao banco de dados
+        conn = sql.connect("data.db")
+        #criando o cursor
+        cursor = conn.cursor()
+        #buscando os dados na tabela clientes
+        cursor.execute("SELECT * FROM clientes WHERE nome = ?", (nome_cliente,))
+        #pegando os dados
+        dados = cursor.fetchall()
+        #fechando a conexão
+        conn.close()
+        #pegando os dados do cliente
+        nome_cliente_atual = dados[0][1]
+        telefone_cliente_atual = dados[0][2]
+        endereco_cliente_atual = dados[0][3]
+        id_cliente_atual = dados[0][0]
+        #limpando os campos de texto
+        campo_nome.delete(0, tk.END)
+        campo_telefone.delete(0, tk.END)
+        campo_endereco.delete(0, tk.END)
+        campo_id["text"] = []
+        #mostrando o nome do cliente no campo de texto
+        campo_nome.insert(0, nome_cliente_atual)
+        #mostrando o telefone do cliente no campo de texto
+        campo_telefone.insert(0, telefone_cliente_atual)
+        #mostrando o endereço do cliente no campo de texto
+        campo_endereco.insert(0, endereco_cliente_atual)
+        #mostrando o id do cliente no campo de texto
+        campo_id["text"] = id_cliente_atual
+        return id_cliente_atual
     
+    #quando o usuário selecionar um cliente, chama a função selecionar_cliente
+    combobox_clientes.bind("<<ComboboxSelected>>", selecionar_cliente)
+
+    #função para excluir o cliente
+    def excluir_cliente_bd(nome, telefone, endereco, id):
+        #conectando ao banco de dados
+        conn = sql.connect("data.db")
+        #criando o cursor
+        cursor = conn.cursor()
+        #buscando os dados na tabela clientes
+        cursor.execute("DELETE FROM clientes WHERE id = ?", (id,))
+        #salvando as alterações
+        conn.commit()
+        #fechando a conexão
+        conn.close()
+        #limpando os campos de texto
+        campo_nome.delete(0, tk.END)
+        campo_telefone.delete(0, tk.END)
+        campo_endereco.delete(0, tk.END)
+        campo_id["text"] = []
+        #mostrando a mensagem de sucesso
+        label_info["text"] = "Cliente excluído com sucesso!"
+
+    #mostrando a janela
+    janela_editar_cliente.mainloop()
+
 
 
 
@@ -236,9 +403,9 @@ submenu = tk.Menu(menu)
 menu.add_cascade(label="Clientes", menu=submenu)
 #se clicar no botão cadastrar, chama a função cadastrar_cliente
 submenu.add_command(label="Cadastrar", command=cadastrar_cliente)
-submenu.add_command(label="Listar")
+submenu.add_command(label="Listar", command=listar_clientes)
 submenu.add_command(label="Editar", command=editar_cliente)
-submenu.add_command(label="Excluir")
+submenu.add_command(label="Excluir", command=excluir_cliente)
 
 submenu = tk.Menu(menu)
 menu.add_cascade(label="Ordens de Serviço", menu=submenu)
