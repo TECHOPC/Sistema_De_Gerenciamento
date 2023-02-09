@@ -1,6 +1,11 @@
 #programa de gerenciamento de clientes e ordens de serviço
 #autor:leonardo da silva de jesus
 
+#instalar o pandas e o tkinter para rodar o programa
+#pip install pandas
+#pip install tkinter
+
+#bibliotecas
 import pandas as pd
 import tkinter as tk
 from tkinter import ttk
