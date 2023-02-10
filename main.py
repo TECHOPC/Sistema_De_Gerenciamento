@@ -6,7 +6,6 @@
 #pip install tkinter
 
 #bibliotecas
-import pandas as pd
 import tkinter as tk
 from tkinter import ttk
 import time
@@ -87,7 +86,6 @@ def cadastrar_cliente():
     
     botao_cadastrar = tk.Button(janela_cadastrar_cliente, text="Cadastrar", command=lambda: cadastrar_cliente_bd(campo_nome.get(), campo_telefone.get(), campo_endereco.get()))
     botao_cadastrar.place(x=100, y=100)
-
 
 #editar cliente
 def editar_cliente():
@@ -213,7 +211,7 @@ def editar_cliente():
     #mostrando a janela
     janela_editar_cliente.mainloop()
 
-#listar clientes
+#listar cliente
 def listar_clientes():
     #criando a janela
     janela_listar_clientes = tk.Tk()
@@ -261,7 +259,7 @@ def listar_clientes():
     #mostrando os clientes na tabela
     mostrar_clientes()
            
-#excluindo clientes
+#excluir cliente
 def excluir_cliente():
     #editar cliente
     janela_editar_cliente = tk.Tk()
@@ -384,6 +382,180 @@ def excluir_cliente():
     #mostrando a janela
     janela_editar_cliente.mainloop()
 
+#Cadastrar ordem de serviço
+def cadastrar_ordem():
+    #criando a janela
+    janela_cadastrar_ordem = tk.Toplevel(janela)
+    janela_cadastrar_ordem.title("GCOS - Cadastrar ordem de serviço")
+    janela_cadastrar_ordem.geometry("300x300")
+    #background cor branca
+    janela_cadastrar_ordem.configure(background="#ffffff")
+
+    #criando os labels
+    label_cliente = tk.Label(janela_cadastrar_ordem, text="Cliente", bg="#ffffff")
+    label_cliente.place(x=10, y=10)
+
+    label_cliente_id = tk.Label(janela_cadastrar_ordem, text="ID", bg="#ffffff")
+    label_cliente_id.place(x=10, y=40)
+
+    label_descricao = tk.Label(janela_cadastrar_ordem, text="Descrição", bg="#ffffff")
+    label_descricao.place(x=10, y=70)
+
+    label_data = tk.Label(janela_cadastrar_ordem, text="Data", bg="#ffffff")
+    label_data.place(x=10, y=130)
+
+    label_info = tk.Label(janela_cadastrar_ordem, text="", bg="#ffffff")
+    label_info.place(x=10, y=160)
+
+    #criando os campos de texto
+    #o campo de texto do cliente será um combobox
+    combobox_clientes = ttk.Combobox(janela_cadastrar_ordem)
+    combobox_clientes.place(x=100, y=10)
+        
+    #mostrando os nomes dos clientes no combobox
+    def pegar_lista_clientes():
+        #conectando ao banco de dados
+        conn = sql.connect("data.db")
+        #criando o cursor
+        cursor = conn.cursor()
+        #buscando os dados na tabela clientes
+        cursor.execute("SELECT nome FROM clientes")
+        #pegando os dados
+        dados = cursor.fetchall()
+        #buscando os dados na tabela id
+        cursor.execute("SELECT id FROM clientes")
+        #pegando os dados
+        dados_id = cursor.fetchall()
+        #fechando a conexão
+        conn.close()
+        #criando uma lista para armazenar os nomes dos clientes
+        lista_clientes = []
+        #criando uma lista para armazenar os ids dos clientes
+        lista_id = []
+        #adicionando os nomes dos clientes na lista
+        for i in dados:
+            lista_clientes.append(i[0])
+        #adicionando os ids dos clientes na lista
+        for i in dados_id:
+            lista_id.append(i[0])
+        #retornando a lista de clientes
+        return lista_clientes, lista_id
+
+    #pegando os dados dos clientes
+    dados_clientes = pegar_lista_clientes()
+
+    #função para preencher os campos de texto com os dados do cliente selecionado
+    def selecionar_cliente(event):
+        #pegando o nome do cliente selecionado
+        nome_cliente = combobox_clientes.get()
+        #pegando o id do cliente selecionado
+        id_cliente = dados_clientes[1][dados_clientes[0].index(nome_cliente)]
+        #mostrando o id do cliente no campo de texto
+        campo_id["text"] = id_cliente
+
+    #mostrando os nomes dos clientes no combobox
+    combobox_clientes["values"] = dados_clientes[0]
+    #chamando a função para preencher os campos de texto com os dados do cliente selecionado
+    combobox_clientes.bind("<<ComboboxSelected>>", selecionar_cliente)
+    
+    campo_id = tk.Label(janela_cadastrar_ordem, text="", bg="#ffffff")
+    campo_id.place(x=100, y=40)
+
+    #mostrando o id do cliente no campo de texto
+    campo_id["text"] = dados_clientes[1][0]
+
+    #campo_descricao deve ser um Text, para que o usuário possa digitar mais de uma linha
+    campo_descricao = tk.Text(janela_cadastrar_ordem, width=40, height=3)
+    campo_descricao.place(x=100, y=70)
+
+    #campo_data deve ser um Entry, para que o usuário possa digitar a data
+    campo_data = tk.Entry(janela_cadastrar_ordem)
+    campo_data.place(x=100, y=130)
+
+      #depois de apertar o botão de cadastrar fechar a janela depois de 1 segundo
+    def botão_cadastrar_os():
+        cadastrar_ordem_bd(combobox_clientes.get(), campo_descricao.get("1.0", tk.END), campo_data.get(), label_info)
+        janela_cadastrar_ordem.after(1000, janela_cadastrar_ordem.destroy)
+
+    #criando o botão de cadastrar
+    botao_cadastrar = tk.Button(janela_cadastrar_ordem, text="Cadastrar", command=lambda: botão_cadastrar_os())
+    botao_cadastrar.place(x=10, y=200)
+ 
+    #função para cadastrar a ordem de serviço no banco de dados
+    def cadastrar_ordem_bd(nome_cliente, descricao, data, label_info):
+        #conectando ao banco de dados
+        conn = sql.connect("data.db")
+        #criando o cursor
+        cursor = conn.cursor()
+        #buscando o id do cliente
+        cursor.execute("SELECT id FROM clientes WHERE nome = ?", (nome_cliente,))
+        #pegando o id
+        id_cliente = cursor.fetchone()[0]
+        #inserindo os dados na tabela ordens
+        cursor.execute("INSERT INTO ordens VALUES (NULL, ?, ?, ?, ?)", (id_cliente, descricao, data, "Em aberto"))
+        #salvando as alterações
+        conn.commit()
+        #fechando a conexão
+        conn.close()
+        #mostrando uma mensagem de sucesso
+        label_info["text"] = "Ordem de serviço cadastrada com sucesso!"
+    
+    #mostrando a janela
+    janela_cadastrar_ordem.mainloop()
+
+#função para listar as ordens de serviço
+def listar_ordens():
+    #criando a janela
+    janela_listar_ordens = tk.Toplevel()
+    janela_listar_ordens.title("Listar Ordens de Serviço")
+    janela_listar_ordens.geometry("800x600")
+    janela_listar_ordens.configure(background="#ffffff")
+
+    #cria tabela para mostrar os dados
+    tabela = ttk.Treeview(janela_listar_ordens, columns=("id", "cliente", "descricao", "data", "status"))
+    #define o tamanho das colunas
+    tabela.column("#0", width=0)
+    tabela.column("id", width=50)
+    tabela.column("cliente", width=200)
+    tabela.column("descricao", width=200)
+    tabela.column("data", width=100)
+    tabela.column("status", width=100)
+    #define o nome das colunas
+    tabela.heading("#0", text="")
+    tabela.heading("id", text="ID")
+    tabela.heading("cliente", text="Cliente")
+    tabela.heading("descricao", text="Descrição")
+    tabela.heading("data", text="Data")
+    tabela.heading("status", text="Status")
+    #mostra a tabela
+    tabela.place(x=10, y=10)
+
+    #função para pegar os dados das ordens de serviço do banco de dados
+    def pegar_lista_ordens():
+        #conectando ao banco de dados
+        conn = sql.connect("data.db")
+        #criando o cursor
+        cursor = conn.cursor()
+        #buscando os dados das ordens de serviço
+        cursor.execute("SELECT ordens.id, clientes.nome, ordens.descricao, ordens.data, ordens.status FROM ordens INNER JOIN clientes ON ordens.id_cliente = clientes.id")
+        #pegando os dados
+        dados = cursor.fetchall()
+        #fechando a conexão
+        conn.close()
+        #retornando os dados
+        return dados
+    
+    #pegando os dados das ordens de serviço
+    dados_ordens = pegar_lista_ordens()
+    #inserindo os dados na tabela
+    for ordem in dados_ordens:
+        tabela.insert("", tk.END, values=ordem)
+
+    #mostrando a janela
+    janela_listar_ordens.mainloop()
+
+    
+
 
 
 
@@ -401,7 +573,6 @@ janela.config(menu=menu)
 #criando os submenus
 submenu = tk.Menu(menu)
 menu.add_cascade(label="Clientes", menu=submenu)
-#se clicar no botão cadastrar, chama a função cadastrar_cliente
 submenu.add_command(label="Cadastrar", command=cadastrar_cliente)
 submenu.add_command(label="Listar", command=listar_clientes)
 submenu.add_command(label="Editar", command=editar_cliente)
@@ -409,8 +580,8 @@ submenu.add_command(label="Excluir", command=excluir_cliente)
 
 submenu = tk.Menu(menu)
 menu.add_cascade(label="Ordens de Serviço", menu=submenu)
-submenu.add_command(label="Cadastrar")
-submenu.add_command(label="Listar")
+submenu.add_command(label="Cadastrar", command=cadastrar_ordem)
+submenu.add_command(label="Listar", command=listar_ordens)
 submenu.add_command(label="Editar")
 submenu.add_command(label="Excluir")
 
