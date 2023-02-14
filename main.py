@@ -180,7 +180,7 @@ rodape = tk.Label(janela, text="Data e hora: " + data_hora, bg="#000000", fg="#f
 rodape.pack(side="bottom", fill="x")
 
 #mosta uma imagem na janela
-plano_de_fundo = Image.open("plano_de_fundo.jpg")
+plano_de_fundo = Image.open("arquivos/plano_de_fundo.jpg")
 plano_de_fundo = ImageTk.PhotoImage(plano_de_fundo)
 plano_de_fundo_label = tk.Label(janela, image=plano_de_fundo)
 plano_de_fundo_label.place(x=0, y=0, relwidth=1, relheight=1)
