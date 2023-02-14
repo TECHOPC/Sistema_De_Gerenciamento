@@ -119,7 +119,7 @@ def janela_cadastrar_cliente():
 
 
 #função para consultar clientes
-def janela_consultar_cliente():
+def janela_consultar_editar_cliente():
     #gera uma tabela com os clientes cadastrados no banco de dados mostrando o id, nome, telefone, email e endereço
     def gerar_tabela():
         #deletando a tabela anterior
@@ -155,6 +155,25 @@ def janela_consultar_cliente():
         for linha in resultado:
             tabela.insert("", "end", values=(linha[0], linha[1], linha[2], linha[3], linha[4]))
 
+        #criando o botão de pesquisar
+        botao_pesquisar = tk.Button(janela_consulta_clientes, text="Pesquisar", command=lambda: pesquisar_cliente())
+        botao_pesquisar.grid(row=3, column=0, columnspan=2, padx=10, pady=10)
+
+        label_info = tk.Label(janela_consulta_clientes, text="", bg="#ffffff", fg="#000000")
+        label_info.grid(row=4, column=0, columnspan=2, padx=10, pady=10)
+        
+        #função para pesquisar clientes
+        def pesquisar_cliente():
+            tabela.selection_set("")
+            nome = entrada_pesquisa.get()
+            nome= str(nome)
+            for linha in tabela.get_children():
+                if nome in tabela.item(linha)["values"][1]:
+                    tabela.selection_set(linha)
+                    tabela.focus(linha)
+                    break
+
+
     #criando a janela
     janela_consulta_clientes = tk.Toplevel()
     janela_consulta_clientes.title("SisGen - Consultar clientes")
@@ -166,7 +185,27 @@ def janela_consultar_cliente():
     label_titulo = tk.Label(janela_consulta_clientes, text="Consultar clientes", bg="#ffffff", fg="#000000")
     label_titulo.grid(row=0, column=0, columnspan=2, padx=10, pady=10)
 
+    #criando pesquisa
+    label_pesquisa = tk.Label(janela_consulta_clientes, text="Pesquisar:", bg="#ffffff", fg="#000000")
+    label_pesquisa.grid(row=2, column=0, padx=10, pady=10)
+    entrada_pesquisa = tk.Entry(janela_consulta_clientes, width=50)
+    entrada_pesquisa.grid(row=2, column=1, padx=10, pady=10)
+
+
+
+    
+
+
     gerar_tabela()
+
+    
+
+
+
+
+
+
+
 
 #criando a janela principal
 janela = tk.Tk()
@@ -194,9 +233,8 @@ janela.config(menu=menu)
 menu_clientes = tk.Menu(menu, tearoff=0)
 menu.add_cascade(label="Clientes", menu=menu_clientes)
 menu_clientes.add_command(label="Cadastrar", command=janela_cadastrar_cliente)
-menu_clientes.add_command(label="Consultar", command=janela_consultar_cliente)
-menu_clientes.add_command(label="Alterar")
-menu_clientes.add_command(label="Excluir")
+menu_clientes.add_command(label="Consultar e Editar", command=janela_consultar_editar_cliente)
+
 
 #criando o menu fornecedores
 menu_fornecedores = tk.Menu(menu, tearoff=0)
