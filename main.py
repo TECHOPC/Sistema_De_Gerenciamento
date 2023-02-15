@@ -29,6 +29,16 @@ def conectar_buscar(comando_sql):
     conexao.close()
     return dados
 
+#criando conexão com o banco de dados para inserir dados
+def conectar_inserir(comando_sql):
+    conexao = sqlite3.connect("banco.db")
+    cursor = conexao.cursor()
+    cursor.execute(comando_sql)
+    conexao.commit()
+    id = cursor.lastrowid
+    conexao.close()
+    return id
+
 #criando tabelas no banco de dados
 def criar_tabelas():
     comando_sql = "CREATE TABLE IF NOT EXISTS clientes (id INTEGER PRIMARY KEY AUTOINCREMENT, nome TEXT, telefone TEXT, email TEXT, endereco TEXT)"
@@ -155,12 +165,23 @@ def janela_consultar_editar_cliente():
         for linha in resultado:
             tabela.insert("", "end", values=(linha[0], linha[1], linha[2], linha[3], linha[4]))
 
+        
+        #criando pesquisa
+        entrada_pesquisa = tk.Entry(janela_consulta_clientes, width=50)
+        entrada_pesquisa.grid(row=0, column=0, padx=10, pady=10)
+    
         #criando o botão de pesquisar
         botao_pesquisar = tk.Button(janela_consulta_clientes, text="Pesquisar", command=lambda: pesquisar_cliente())
-        botao_pesquisar.grid(row=3, column=0, columnspan=2, padx=10, pady=10)
+        botao_pesquisar.grid(row=0, column=1, columnspan=1, padx=10, pady=10)
 
-        label_info = tk.Label(janela_consulta_clientes, text="", bg="#ffffff", fg="#000000")
-        label_info.grid(row=4, column=0, columnspan=2, padx=10, pady=10)
+        #criando o botão de editar
+        botao_editar = tk.Button(janela_consulta_clientes, text="Editar", command=lambda: editar_cliente(tabela))
+        botao_editar.grid(row=3, column=0, columnspan=1, padx=10, pady=10)
+
+        #criando o botão de excluir
+        botao_excluir = tk.Button(janela_consulta_clientes, text="Excluir", command=lambda: excluir_cliente(tabela.item(tabela.selection())["values"][0]))
+        botao_excluir.grid(row=3, column=1, columnspan=1, padx=10, pady=10)
+
         
         #função para pesquisar clientes
         def pesquisar_cliente():
@@ -172,30 +193,82 @@ def janela_consultar_editar_cliente():
                     tabela.selection_set(linha)
                     tabela.focus(linha)
                     break
+        
+        #função para editar clientes
+        def editar_cliente(tabela):
+            #pegando os dados da linha selecionada
+            id = tabela.item(tabela.selection())["values"][0]
+            nome = tabela.item(tabela.selection())["values"][1]
+            telefone = tabela.item(tabela.selection())["values"][2]
+            email = tabela.item(tabela.selection())["values"][3]
+            endereco = tabela.item(tabela.selection())["values"][4]
+            
+            #criando a janela de edição
+            janela_editar_cliente = tk.Toplevel()
+            janela_editar_cliente.title("SisGen - Editar cliente")
+            janela_editar_cliente.geometry("400x300")
+            janela_editar_cliente.resizable(False, False)
+            janela_editar_cliente.configure(background="#ffffff")
+            
+            #criando o label de título
+            label_titulo = tk.Label(janela_editar_cliente, text="Editar cliente", bg="#ffffff", fg="#000000")
+            label_titulo.grid(row=0, column=0, columnspan=2, padx=10, pady=10)
+            
+            label_nome = tk.Label(janela_editar_cliente, text="Nome:", bg="#ffffff", fg="#000000")
+            label_nome.grid(row=1, column=0, padx=10, pady=10)
+            entrada_nome = tk.Entry(janela_editar_cliente)
+            entrada_nome.grid(row=1, column=1, padx=10, pady=10)
+            entrada_nome.insert(0, nome)
+            label_telefone = tk.Label(janela_editar_cliente, text="Telefone:", bg="#ffffff", fg="#000000")
+            label_telefone.grid(row=2, column=0, padx=10, pady=10)
+            entrada_telefone = tk.Entry(janela_editar_cliente)
+            entrada_telefone.grid(row=2, column=1, padx=10, pady=10)
+            entrada_telefone.insert(0, telefone)
+            label_email = tk.Label(janela_editar_cliente, text="E-mail:", bg="#ffffff", fg="#000000")
+            label_email.grid(row=3, column=0, padx=10, pady=10)
+            entrada_email = tk.Entry(janela_editar_cliente)
+            entrada_email.grid(row=3, column=1, padx=10, pady=10)
+            entrada_email.insert(0, email)
+            label_endereco = tk.Label(janela_editar_cliente, text="Endereço:", bg="#ffffff", fg="#000000")
+            label_endereco.grid(row=4, column=0, padx=10, pady=10)
+            entrada_endereco = tk.Entry(janela_editar_cliente)
+            entrada_endereco.grid(row=4, column=1, padx=10, pady=10)
+            entrada_endereco.insert(0, endereco)
+            label_info = tk.Label(janela_editar_cliente, text="", bg="#ffffff", fg="#000000")
+            label_info.grid(row=5, column=0, columnspan=2, padx=10, pady=10)
+            
+            #função para salvar a edição
+            def salvar_edicao(id, nome, telefone, email, endereco, janela):
+                comando_sql = "UPDATE clientes SET nome='{}', telefone='{}', email='{}', endereco='{}' WHERE id={}".format(nome, telefone, email, endereco, id)
+                conectar(comando_sql)
+                label_info["text"] = "Cliente editado com sucesso!"
+                time.sleep(1)
+                label_info["text"] = ""
+                janela_editar_cliente.destroy()
+                gerar_tabela()
+
+            #criando o botão de salvar
+            botao_salvar = tk.Button(janela_editar_cliente, text="Salvar", command=lambda: salvar_edicao(id, entrada_nome.get(), entrada_telefone.get(), entrada_email.get(), entrada_endereco.get(), janela_editar_cliente))
+            botao_salvar.grid(row=5, column=0, columnspan=2, padx=10, pady=10)
+            
+        
+        #função para excluir clientes
+        def excluir_cliente(id):
+            comando_sql = "DELETE FROM clientes WHERE id={}".format(id)
+            conectar(comando_sql)
+            tabela.delete(tabela.selection())
+            gerar_tabela()
 
 
+
+            
     #criando a janela
     janela_consulta_clientes = tk.Toplevel()
-    janela_consulta_clientes.title("SisGen - Consultar clientes")
+    janela_consulta_clientes.title("SisGen - Consultar e editar clientes")
     janela_consulta_clientes.geometry("870x500")
     janela_consulta_clientes.resizable(False, False)
     janela_consulta_clientes.configure(background="#ffffff")
-
-    #criando o label de título
-    label_titulo = tk.Label(janela_consulta_clientes, text="Consultar clientes", bg="#ffffff", fg="#000000")
-    label_titulo.grid(row=0, column=0, columnspan=2, padx=10, pady=10)
-
-    #criando pesquisa
-    label_pesquisa = tk.Label(janela_consulta_clientes, text="Pesquisar:", bg="#ffffff", fg="#000000")
-    label_pesquisa.grid(row=2, column=0, padx=10, pady=10)
-    entrada_pesquisa = tk.Entry(janela_consulta_clientes, width=50)
-    entrada_pesquisa.grid(row=2, column=1, padx=10, pady=10)
-
-
-
     
-
-
     gerar_tabela()
 
     
@@ -240,17 +313,13 @@ menu_clientes.add_command(label="Consultar e Editar", command=janela_consultar_e
 menu_fornecedores = tk.Menu(menu, tearoff=0)
 menu.add_cascade(label="Fornecedores", menu=menu_fornecedores)
 menu_fornecedores.add_command(label="Cadastrar")
-menu_fornecedores.add_command(label="Consultar")
-menu_fornecedores.add_command(label="Alterar")
-menu_fornecedores.add_command(label="Excluir")
+menu_fornecedores.add_command(label="Consultar e Editar")
 
 #criando o menu produtos
 menu_produtos = tk.Menu(menu, tearoff=0)
 menu.add_cascade(label="Produtos", menu=menu_produtos)
 menu_produtos.add_command(label="Cadastrar")
-menu_produtos.add_command(label="Consultar")
-menu_produtos.add_command(label="Alterar")
-menu_produtos.add_command(label="Excluir")
+menu_produtos.add_command(label="Consultar e Editar")
 
 #criando o menu vendas
 menu_movimentacoes = tk.Menu(menu, tearoff=0)
